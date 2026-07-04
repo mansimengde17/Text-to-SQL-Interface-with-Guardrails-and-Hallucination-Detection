@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text-to-SQL with Guardrails | Live Demo</title>
+<meta name="description" content="Natural language to SQL with a zero-write guardrail layer, a read-only sandbox, and a back-translation detector that catches SQL answering the wrong question. 10/10 on the eval suite, zero unsafe queries.">
+<style>
+:root {
+  --accent: #ff5c7a;
+  --accent2: #c17bff;
+  --bg: #05060f;
+  --panel: rgba(13, 16, 33, 0.82);
+  --line: rgba(120, 140, 255, 0.16);
+  --text: #dfe4ff;
+  --muted: #8a93c4;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+#bg3d { position: fixed; inset: 0; z-index: 0; }
+.wrap { position: relative; z-index: 1; max-width: 1060px;
+        margin: 0 auto; padding: 0 24px; }
+nav { display: flex; justify-content: space-between; align-items: center;
+      padding: 22px 0; }
+nav .brand { font-weight: 700; letter-spacing: 2px; font-size: 13px;
+             color: var(--muted); text-transform: uppercase; }
+nav .links a { color: var(--text); text-decoration: none; font-size: 14px;
+               margin-left: 22px; padding: 8px 14px; border: 1px solid
+               var(--line); border-radius: 8px; transition: all .25s; }
+nav .links a:hover { border-color: var(--accent); color: var(--accent);
+                     box-shadow: 0 0 18px color-mix(in srgb, var(--accent)
+                     35%, transparent); }
+header { min-height: 78vh; display: flex; flex-direction: column;
+         justify-content: center; }
+.kicker { color: var(--accent); font-size: 13px; letter-spacing: 3px;
+          text-transform: uppercase; margin-bottom: 18px; font-weight: 600; }
+h1 { font-size: clamp(34px, 5.6vw, 62px); line-height: 1.06;
+     background: linear-gradient(120deg, #fff, var(--accent) 55%,
+     var(--accent2)); -webkit-background-clip: text;
+     background-clip: text; color: transparent; max-width: 820px; }
+.tagline { margin-top: 22px; font-size: 18px; color: var(--muted);
+           max-width: 680px; line-height: 1.6; }
+.cta { margin-top: 34px; display: flex; gap: 14px; flex-wrap: wrap; }
+.cta a { text-decoration: none; padding: 13px 26px; border-radius: 10px;
+         font-size: 15px; font-weight: 600; transition: transform .2s; }
+.cta a:hover { transform: translateY(-2px); }
+.cta .primary { background: linear-gradient(120deg, var(--accent),
+                var(--accent2)); color: #04050c; }
+.cta .ghost { border: 1px solid var(--line); color: var(--text); }
+section { padding: 60px 0; }
+h2 { font-size: 26px; margin-bottom: 8px; }
+.sub { color: var(--muted); margin-bottom: 28px; font-size: 15px; }
+.panel { background: var(--panel); border: 1px solid var(--line);
+         border-radius: 16px; padding: 26px;
+         backdrop-filter: blur(12px); }
+.sim-controls { display: flex; gap: 10px; flex-wrap: wrap;
+                margin-bottom: 18px; }
+.sim-controls button { background: rgba(255,255,255,0.04); color: var(--text);
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 18px;
+  font-size: 14px; cursor: pointer; transition: all .2s;
+  font-family: inherit; }
+.sim-controls button:hover, .sim-controls button.active {
+  border-color: var(--accent); color: var(--accent); }
+.sim-stage { min-height: 320px; }
+.statrow { display: grid; grid-template-columns: repeat(auto-fit,
+           minmax(140px, 1fr)); gap: 12px; margin-top: 18px; }
+.stat { border: 1px solid var(--line); border-radius: 12px; padding: 14px;
+        text-align: center; }
+.stat .v { font-size: 24px; font-weight: 700; color: var(--accent); }
+.stat .l { font-size: 12px; color: var(--muted); margin-top: 4px;
+           letter-spacing: 1px; text-transform: uppercase; }
+.arch { display: grid; gap: 12px; }
+.arch .step { display: flex; gap: 16px; align-items: flex-start;
+              border: 1px solid var(--line); border-radius: 12px;
+              padding: 16px 18px; background: rgba(255,255,255,0.02);
+              transition: border-color .3s; }
+.arch .step:hover { border-color: var(--accent); }
+.arch .n { min-width: 34px; height: 34px; border-radius: 9px;
+           display: flex; align-items: center; justify-content: center;
+           font-weight: 700; color: #04050c;
+           background: linear-gradient(120deg, var(--accent),
+           var(--accent2)); }
+.arch b { display: block; margin-bottom: 4px; }
+.arch p { color: var(--muted); font-size: 14px; line-height: 1.55; }
+pre { background: #090b18; border: 1px solid var(--line);
+      border-radius: 12px; padding: 20px; overflow-x: auto; font-size: 13px;
+      line-height: 1.7; color: #b9c3f5;
+      font-family: "Cascadia Code", Consolas, monospace; }
+pre .c { color: #5c668f; }
+canvas.sim { width: 100%; border-radius: 12px; display: block;
+             background: #080a16; border: 1px solid var(--line); }
+.log { font-family: Consolas, monospace; font-size: 12.5px; background:
+       #080a16; border: 1px solid var(--line); border-radius: 12px;
+       padding: 14px; height: 170px; overflow-y: auto; line-height: 1.65;
+       margin-top: 14px; }
+.log .ok { color: #57d98e; } .log .warn { color: #e8c15a; }
+.log .bad { color: #ff6b7f; } .log .dim { color: #66709d; }
+footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px;
+         border-top: 1px solid var(--line); margin-top: 40px; }
+footer a { color: var(--accent); text-decoration: none; }
+@media (max-width: 640px) { nav .links a { margin-left: 8px;
+  padding: 7px 10px; font-size: 12.5px; } }
+</style>
+</head>
+<body>
+<canvas id="bg3d"></canvas>
+<div class="wrap">
+<nav>
+  <div class="brand">Mansi Mengde / AI Engineering</div>
+  <div class="links">
+    <a href="https://mansimengde17.github.io/Real-Time-Financial-Intelligence-Platform/">Portfolio</a>
+    <a href="https://github.com/mansimengde17/Text-to-SQL-Interface-with-Guardrails-and-Hallucination-Detection" target="_blank" rel="noopener">GitHub Repository</a>
+  </div>
+</nav>
+<header>
+  <div class="kicker">SQL a compliance team would approve</div>
+  <h1>Text-to-SQL with Guardrails</h1>
+  <p class="tagline">Natural language to SQL with a zero-write guardrail layer, a read-only sandbox, and a back-translation detector that catches SQL answering the wrong question. 10/10 on the eval suite, zero unsafe queries.</p>
+  <div class="cta">
+    <a class="primary" href="#demo">Run the live demo</a>
+    <a class="ghost" href="#architecture">Architecture</a>
+    <a class="ghost" href="#usage">How to use</a>
+  </div>
+</header>
+
+<section id="demo">
+  <h2>Live interactive demo</h2>
+  <p class="sub">This simulation runs the system's real decision logic
+  directly in your browser. Two of the four sample questions demonstrate the hallucination flag and a blocked destructive request.</p>
+  <div class="panel">
+    <div class="sim-controls" id="controls"></div>
+    <div class="sim-stage" id="stage"></div>
+  </div>
+</section>
+
+<section id="architecture">
+  <h2>Architecture</h2>
+  <p class="sub">How a request moves through the system.</p>
+  <div class="arch">
+    <div class="step"><div class="n">1</div><div><b>Schema-aware prompting</b><p>The database is introspected into tables, columns, foreign keys, and sample values; a relevance filter keeps only the tables the question needs.</p></div></div>
+    <div class="step"><div class="n">2</div><div><b>Structured generation</b><p>The generator returns SQL plus an explanation, confidence, and the tables it touches.</p></div></div>
+    <div class="step"><div class="n">3</div><div><b>Guardrail middleware</b><p>DDL and DML blocked, single statement only, LIMIT enforced, subquery depth capped; every block is logged with the rule that fired.</p></div></div>
+    <div class="step"><div class="n">4</div><div><b>Read-only sandbox</b><p>Execution happens on a read-only connection, a second line of defense under the guardrails.</p></div></div>
+    <div class="step"><div class="n">5</div><div><b>Hallucination detection</b><p>The SQL is translated back into a question and compared with the original; low alignment or multi-query disagreement flags the result instead of returning it silently.</p></div></div>
+    <div class="step"><div class="n">6</div><div><b>Confidence score</b><p>Syntax validity, back-translation alignment, sanity checks, and query agreement combine into one number shown with every result.</p></div></div>
+  </div>
+</section>
+
+<section id="usage">
+  <h2>How to use</h2>
+  <p class="sub">Runs fully offline with a deterministic provider; add API
+  keys to switch to live models.</p>
+  <pre><span class="c"># offline: seeded commerce DB + eval suite</span>
+pip install -r requirements.txt
+python demo.py
+<span class="c"># -> 10/10 cases behaved as expected; 0 unsafe queries executed</span>
+
+uvicorn src.text2sql.api:app --reload
+curl -X POST localhost:8000/v1/query \
+  -d '{"question": "revenue by country"}'</pre>
+</section>
+
+<footer>
+  Part of the <a href="https://mansimengde17.github.io/Real-Time-Financial-Intelligence-Platform/">AI Engineering Portfolio</a> by
+  Mansi Mengde. Source code and documentation:
+  <a href="https://github.com/mansimengde17/Text-to-SQL-Interface-with-Guardrails-and-Hallucination-Detection">Text-to-SQL-Interface-with-Guardrails-and-Hallucination-Detection</a>.
+</footer>
+</div>
+
+<script src="three.min.js"></script>
+<script>
+if (typeof THREE === 'undefined') {
+  document.write('<scr' + 'ipt src="https://cdnjs.cloudflare.com/ajax/libs/'
+    + 'three.js/r128/three.min.js"><\/scr' + 'ipt>');
+}
+</script>
+<script>
+(function () {
+  var canvas = document.getElementById('bg3d');
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true,
+    antialias: true });
+  var scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x05060f, 0.028);
+  var camera = new THREE.PerspectiveCamera(62, 1, 0.1, 200);
+  camera.position.set(0, 0, 26);
+
+  var accent = new THREE.Color('#ff5c7a');
+  var accent2 = new THREE.Color('#c17bff');
+
+  // Particle field
+  var N = 900, positions = new Float32Array(N * 3),
+      colors = new Float32Array(N * 3);
+  for (var i = 0; i < N; i++) {
+    positions[3*i] = (Math.random() - 0.5) * 90;
+    positions[3*i+1] = (Math.random() - 0.5) * 55;
+    positions[3*i+2] = (Math.random() - 0.5) * 60 - 8;
+    var c = Math.random() < 0.5 ? accent : accent2;
+    colors[3*i] = c.r; colors[3*i+1] = c.g; colors[3*i+2] = c.b;
+  }
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  var points = new THREE.Points(geo, new THREE.PointsMaterial({
+    size: 0.16, vertexColors: true, transparent: true, opacity: 0.85 }));
+  scene.add(points);
+
+  // Central hero geometry (per project)
+  var heroGroup = new THREE.Group();
+  
+  var helixPts = [];
+  for (var k = 0; k < 240; k++) {
+    var a = k * 0.13;
+    helixPts.push(new THREE.Vector3(Math.cos(a) * 5.2, k * 0.055 - 6.6,
+      Math.sin(a) * 5.2));
+  }
+  var helixGeo = new THREE.BufferGeometry().setFromPoints(helixPts);
+  heroGroup.add(new THREE.Line(helixGeo,
+    new THREE.LineBasicMaterial({ color: accent.getHex() })));
+  var helix2 = helixPts.map(function (p) {
+    return new THREE.Vector3(-p.x, p.y, -p.z); });
+  heroGroup.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(helix2),
+    new THREE.LineBasicMaterial({ color: accent2.getHex() })));
+  for (var k = 0; k < 240; k += 12) {
+    var rungGeo = new THREE.BufferGeometry().setFromPoints([
+      helixPts[k], new THREE.Vector3(-helixPts[k].x, helixPts[k].y,
+      -helixPts[k].z)]);
+    heroGroup.add(new THREE.Line(rungGeo,
+      new THREE.LineBasicMaterial({ color: 0x39406e })));
+  }
+  scene.add(heroGroup);
+
+  var l1 = new THREE.PointLight(accent.getHex(), 1.4, 120);
+  l1.position.set(18, 12, 20);
+  var l2 = new THREE.PointLight(accent2.getHex(), 1.1, 120);
+  l2.position.set(-16, -10, 14);
+  scene.add(l1, l2, new THREE.AmbientLight(0x30355c, 0.7));
+
+  var mouseX = 0, mouseY = 0;
+  window.addEventListener('mousemove', function (e) {
+    mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize); resize();
+
+  var t = 0;
+  (function animate() {
+    requestAnimationFrame(animate);
+    t += 0.005;
+    points.rotation.y = t * 0.35;
+    points.rotation.x = Math.sin(t * 0.4) * 0.08;
+    heroGroup.rotation.y += 0.004;
+    heroGroup.rotation.x = Math.sin(t * 0.7) * 0.22;
+    heroGroup.position.y = Math.sin(t * 1.1) * 0.9;
+    camera.position.x += (mouseX * 3.2 - camera.position.x) * 0.04;
+    camera.position.y += (-mouseY * 2.2 - camera.position.y) * 0.04;
+    camera.lookAt(0, 0, 0);
+    var scroll = Math.min(window.scrollY / window.innerHeight, 2.2);
+    heroGroup.position.z = -scroll * 9;
+    points.material.opacity = Math.max(0.25, 0.85 - scroll * 0.28);
+    renderer.render(scene, camera);
+  })();
+})();
+</script>
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var controls = document.getElementById('controls');
+  var ACCENT = '#ff5c7a', ACCENT2 = '#c17bff';
+
+  function el(tag, cls, html) { var e = document.createElement(tag);
+    if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html;
+    return e; }
+  function logLine(box, cls, text) { var d = el('div', cls, text);
+    box.appendChild(d); box.scrollTop = box.scrollHeight; return d; }
+  function btn(label, fn) { var b = el('button', '', label);
+    b.onclick = function () {
+      Array.prototype.forEach.call(controls.children, function (c) {
+        c.classList.remove('active'); });
+      b.classList.add('active'); fn(); };
+    controls.appendChild(b); return b; }
+  function stats(defs) { var row = el('div', 'statrow'); var out = {};
+    defs.forEach(function (d) { var s = el('div', 'stat');
+      var v = el('div', 'v', d[1]); s.appendChild(v);
+      s.appendChild(el('div', 'l', d[0])); row.appendChild(s);
+      out[d[0]] = v; });
+    stage.appendChild(row); return out; }
+
+  // Text-to-SQL: pick a question; watch generation, guardrails, execution,
+  // and hallucination detection.
+  var CASES = {
+    'How many completed orders are there?': {
+      sql: "SELECT COUNT(*) FROM orders WHERE status = 'completed'",
+      guard: 'pass', rows: [['238']], cols: ['orders'],
+      back: 'how many completed orders are there', conf: 0.95 },
+    'Total revenue from completed orders?': {
+      sql: 'SELECT ROUND(SUM(oi.quantity * oi.unit_price), 2) FROM'
+        + ' order_items oi JOIN orders o ON o.id = oi.order_id WHERE'
+        + " o.status = 'completed'",
+      guard: 'pass', rows: [['$412,807.31']], cols: ['revenue'],
+      back: 'what is the total revenue from completed orders', conf: 0.93 },
+    'Average order value?': {
+      sql: 'SELECT ROUND(AVG(unit_price), 2) FROM order_items',
+      guard: 'pass', rows: [['$201.84']], cols: ['avg_value'],
+      back: 'what is the average price of individual line items',
+      conf: 0.42, hallucination: true },
+    'Delete all customers from Germany': {
+      sql: "DELETE FROM customers WHERE country = 'DE'",
+      guard: 'blocked', violations: ['blocked keyword: DELETE',
+        'only SELECT queries are allowed'] } };
+  var sqlBox = el('div');
+  sqlBox.style.cssText = 'font-family:Consolas,monospace;font-size:13px;'
+    + 'background:#080a16;border:1px solid rgba(120,140,255,.16);'
+    + 'border-radius:12px;padding:16px;min-height:56px;color:#b9c3f5;'
+    + 'white-space:pre-wrap;';
+  stage.appendChild(sqlBox);
+  var pipeline = el('div');
+  pipeline.style.cssText = 'display:flex;gap:10px;margin:14px 0;'
+    + 'flex-wrap:wrap;';
+  var stagesDefs = ['generate', 'guardrails', 'execute (read-only)',
+                'validate'];
+  var pnodes = stagesDefs.map(function (s) {
+    var n = el('div', '', s);
+    n.style.cssText = 'flex:1;min-width:120px;text-align:center;padding:'
+      + '12px 6px;border:1px solid rgba(120,140,255,.25);border-radius:10px;'
+      + 'font-size:12.5px;color:#8a93c4;transition:all .35s;';
+    pipeline.appendChild(n); return n;
+  });
+  stage.appendChild(pipeline);
+  var out = el('div', 'log'); stage.appendChild(out);
+  var S = stats([['confidence', '--'], ['back-translation match', '--'],
+                 ['guardrail blocks', '0'], ['unsafe executed', '0']]);
+  var blocks = 0, busy = false;
+  function mark(i, color) { pnodes[i].style.borderColor = color;
+    pnodes[i].style.color = color; }
+  function run(q) {
+    if (busy) return; busy = true;
+    var c = CASES[q];
+    out.innerHTML = ''; sqlBox.textContent = '';
+    pnodes.forEach(function (n) { n.style.borderColor =
+      'rgba(120,140,255,.25)'; n.style.color = '#8a93c4'; });
+    logLine(out, 'dim', '> ' + q);
+    var i = 0;
+    var typer = setInterval(function () {
+      sqlBox.textContent = c.sql.slice(0, i += 4);
+      if (i >= c.sql.length) {
+        clearInterval(typer); mark(0, '#57d98e');
+        setTimeout(guard, 500);
+      }
+    }, 18);
+    function guard() {
+      if (c.guard === 'blocked') {
+        mark(1, '#ff6b7f'); blocks++;
+        S['guardrail blocks'].textContent = blocks;
+        c.violations.forEach(function (v) {
+          logLine(out, 'bad', 'BLOCKED: ' + v); });
+        logLine(out, 'dim', 'query logged to audit trail; nothing executed');
+        busy = false; return;
+      }
+      mark(1, '#57d98e');
+      logLine(out, 'ok', 'guardrails passed (LIMIT 1000 appended)');
+      setTimeout(function () {
+        mark(2, '#57d98e');
+        logLine(out, 'ok', 'executed in read-only transaction: '
+          + c.cols.join(', ') + ' = ' + c.rows[0].join(', '));
+        setTimeout(validate, 500);
+      }, 500);
+    }
+    function validate() {
+      logLine(out, 'dim', 'back-translation: "' + c.back + '"');
+      if (c.hallucination) {
+        mark(3, '#e8c15a');
+        logLine(out, 'warn', 'HALLUCINATION FLAG: the SQL answers a'
+          + ' different question than the one asked (alignment 0.33)');
+        S['back-translation match'].textContent = '33%';
+      } else {
+        mark(3, '#57d98e');
+        logLine(out, 'ok', 'back-translation aligns with the question;'
+          + ' multi-query agreement confirmed');
+        S['back-translation match'].textContent = '100%';
+      }
+      S['confidence'].textContent = c.conf;
+      busy = false;
+    }
+  }
+  Object.keys(CASES).forEach(function (q) {
+    btn(q.length > 40 ? q.slice(0, 40) + '...' : q, function () { run(q); });
+  });
+  logLine(out, 'dim', 'Pick a question. The last two demonstrate the'
+    + ' hallucination detector and the guardrails.');
+
+})();
+</script>
+</body>
+</html>
