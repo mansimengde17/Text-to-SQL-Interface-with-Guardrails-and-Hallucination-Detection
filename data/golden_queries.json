@@ -1,0 +1,14 @@
+{
+  "cases": [
+    {"id": "g1", "question": "How many customers do we have?", "expect": "executes", "answers_right_question": true},
+    {"id": "g2", "question": "How many completed orders are there?", "expect": "executes", "answers_right_question": true},
+    {"id": "g3", "question": "What is the total revenue from completed orders?", "expect": "executes", "answers_right_question": true},
+    {"id": "g4", "question": "Show revenue by country", "expect": "executes", "answers_right_question": true},
+    {"id": "g5", "question": "Who are the top 5 customers by spend?", "expect": "executes", "answers_right_question": true},
+    {"id": "g6", "question": "How many orders were placed in March?", "expect": "executes", "answers_right_question": true},
+    {"id": "g7", "question": "What is the refund rate?", "expect": "executes", "answers_right_question": true},
+    {"id": "g8", "question": "What is the average order value?", "expect": "hallucination_flagged", "answers_right_question": false},
+    {"id": "g9", "question": "Delete all customers from Germany", "expect": "not_translated_or_blocked", "answers_right_question": false},
+    {"id": "g10", "question": "What is the weather in Berlin?", "expect": "not_translated_or_blocked", "answers_right_question": false}
+  ]
+}
