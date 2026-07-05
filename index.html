@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Text-to-SQL with Guardrails | Live Demo</title>
-<meta name="description" content="Natural language to SQL with a zero-write guardrail layer, a read-only sandbox, and a back-translation detector that catches SQL answering the wrong question. 10/10 on the eval suite, zero unsafe queries.">
+<title>Text to SQL with Guardrails | Live Demo</title>
+<meta name="description" content="Natural language to SQL with a zero write guardrail layer, a read only sandbox, and a back translation detector that catches SQL answering the wrong question. 10/10 on the eval suite, zero unsafe queries.">
 <style>
 :root {
   --accent: #ff5c7a;
@@ -114,13 +114,13 @@ footer a { color: var(--accent); text-decoration: none; }
   <div class="brand">Mansi Mengde / AI Engineering</div>
   <div class="links">
     <a href="https://mansimengde17.github.io/Real-Time-Financial-Intelligence-Platform/">Portfolio</a>
-    <a href="https://github.com/mansimengde17/Text-to-SQL-Interface-with-Guardrails-and-Hallucination-Detection" target="_blank" rel="noopener">GitHub Repository</a>
+    <a href="https://github.com/mansimengde17/Text to SQL-Interface-with-Guardrails-and-Hallucination-Detection" target="_blank" rel="noopener">GitHub Repository</a>
   </div>
 </nav>
 <header>
   <div class="kicker">SQL a compliance team would approve</div>
-  <h1>Text-to-SQL with Guardrails</h1>
-  <p class="tagline">Natural language to SQL with a zero-write guardrail layer, a read-only sandbox, and a back-translation detector that catches SQL answering the wrong question. 10/10 on the eval suite, zero unsafe queries.</p>
+  <h1>Text to SQL with Guardrails</h1>
+  <p class="tagline">Natural language to SQL with a zero write guardrail layer, a read only sandbox, and a back translation detector that catches SQL answering the wrong question. 10/10 on the eval suite, zero unsafe queries.</p>
   <div class="cta">
     <a class="primary" href="#demo">Run the live demo</a>
     <a class="ghost" href="#architecture">Architecture</a>
@@ -142,12 +142,12 @@ footer a { color: var(--accent); text-decoration: none; }
   <h2>Architecture</h2>
   <p class="sub">How a request moves through the system.</p>
   <div class="arch">
-    <div class="step"><div class="n">1</div><div><b>Schema-aware prompting</b><p>The database is introspected into tables, columns, foreign keys, and sample values; a relevance filter keeps only the tables the question needs.</p></div></div>
+    <div class="step"><div class="n">1</div><div><b>Schema aware prompting</b><p>The database is introspected into tables, columns, foreign keys, and sample values; a relevance filter keeps only the tables the question needs.</p></div></div>
     <div class="step"><div class="n">2</div><div><b>Structured generation</b><p>The generator returns SQL plus an explanation, confidence, and the tables it touches.</p></div></div>
     <div class="step"><div class="n">3</div><div><b>Guardrail middleware</b><p>DDL and DML blocked, single statement only, LIMIT enforced, subquery depth capped; every block is logged with the rule that fired.</p></div></div>
-    <div class="step"><div class="n">4</div><div><b>Read-only sandbox</b><p>Execution happens on a read-only connection, a second line of defense under the guardrails.</p></div></div>
-    <div class="step"><div class="n">5</div><div><b>Hallucination detection</b><p>The SQL is translated back into a question and compared with the original; low alignment or multi-query disagreement flags the result instead of returning it silently.</p></div></div>
-    <div class="step"><div class="n">6</div><div><b>Confidence score</b><p>Syntax validity, back-translation alignment, sanity checks, and query agreement combine into one number shown with every result.</p></div></div>
+    <div class="step"><div class="n">4</div><div><b>Read only sandbox</b><p>Execution happens on a read only connection, a second line of defense under the guardrails.</p></div></div>
+    <div class="step"><div class="n">5</div><div><b>Hallucination detection</b><p>The SQL is translated back into a question and compared with the original; low alignment or multi query disagreement flags the result instead of returning it silently.</p></div></div>
+    <div class="step"><div class="n">6</div><div><b>Confidence score</b><p>Syntax validity, back translation alignment, sanity checks, and query agreement combine into one number shown with every result.</p></div></div>
   </div>
 </section>
 
@@ -168,7 +168,7 @@ curl -X POST localhost:8000/v1/query \
 <footer>
   Part of the <a href="https://mansimengde17.github.io/Real-Time-Financial-Intelligence-Platform/">AI Engineering Portfolio</a> by
   Mansi Mengde. Source code and documentation:
-  <a href="https://github.com/mansimengde17/Text-to-SQL-Interface-with-Guardrails-and-Hallucination-Detection">Text-to-SQL-Interface-with-Guardrails-and-Hallucination-Detection</a>.
+  <a href="https://github.com/mansimengde17/Text to SQL-Interface-with-Guardrails-and-Hallucination-Detection">Text to SQL-Interface-with-Guardrails-and-Hallucination-Detection</a>.
 </footer>
 </div>
 
@@ -297,7 +297,7 @@ if (typeof THREE === 'undefined') {
       out[d[0]] = v; });
     stage.appendChild(row); return out; }
 
-  // Text-to-SQL: pick a question; watch generation, guardrails, execution,
+  // Text to SQL: pick a question; watch generation, guardrails, execution,
   // and hallucination detection.
   var CASES = {
     'How many completed orders are there?': {
@@ -328,7 +328,7 @@ if (typeof THREE === 'undefined') {
   var pipeline = el('div');
   pipeline.style.cssText = 'display:flex;gap:10px;margin:14px 0;'
     + 'flex-wrap:wrap;';
-  var stagesDefs = ['generate', 'guardrails', 'execute (read-only)',
+  var stagesDefs = ['generate', 'guardrails', 'execute (read only)',
                 'validate'];
   var pnodes = stagesDefs.map(function (s) {
     var n = el('div', '', s);
@@ -339,7 +339,7 @@ if (typeof THREE === 'undefined') {
   });
   stage.appendChild(pipeline);
   var out = el('div', 'log'); stage.appendChild(out);
-  var S = stats([['confidence', '--'], ['back-translation match', '--'],
+  var S = stats([['confidence', '--'], ['back translation match', '--'],
                  ['guardrail blocks', '0'], ['unsafe executed', '0']]);
   var blocks = 0, busy = false;
   function mark(i, color) { pnodes[i].style.borderColor = color;
@@ -372,23 +372,23 @@ if (typeof THREE === 'undefined') {
       logLine(out, 'ok', 'guardrails passed (LIMIT 1000 appended)');
       setTimeout(function () {
         mark(2, '#57d98e');
-        logLine(out, 'ok', 'executed in read-only transaction: '
+        logLine(out, 'ok', 'executed in read only transaction: '
           + c.cols.join(', ') + ' = ' + c.rows[0].join(', '));
         setTimeout(validate, 500);
       }, 500);
     }
     function validate() {
-      logLine(out, 'dim', 'back-translation: "' + c.back + '"');
+      logLine(out, 'dim', 'back translation: "' + c.back + '"');
       if (c.hallucination) {
         mark(3, '#e8c15a');
         logLine(out, 'warn', 'HALLUCINATION FLAG: the SQL answers a'
           + ' different question than the one asked (alignment 0.33)');
-        S['back-translation match'].textContent = '33%';
+        S['back translation match'].textContent = '33%';
       } else {
         mark(3, '#57d98e');
-        logLine(out, 'ok', 'back-translation aligns with the question;'
-          + ' multi-query agreement confirmed');
-        S['back-translation match'].textContent = '100%';
+        logLine(out, 'ok', 'back translation aligns with the question;'
+          + ' multi query agreement confirmed');
+        S['back translation match'].textContent = '100%';
       }
       S['confidence'].textContent = c.conf;
       busy = false;
